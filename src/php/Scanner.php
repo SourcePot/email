@@ -58,7 +58,7 @@ final class Scanner{
     {
         // unfold header fields
         $msgHeader=preg_replace('/\r\n\s+/',' ',$msgHeader);
-        // get fields
+        // get header fields and loop through these fields
         preg_match_all('/([^:]+):([^\r\n]+)\r\n/',$msgHeader,$fields);
         foreach($fields[1] as $index=>$fieldName){
             $fieldName=strtolower($fieldName);
