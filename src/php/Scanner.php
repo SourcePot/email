@@ -73,12 +73,14 @@ final class Scanner{
                 // decode values
                 $eqSign=strpos($fieldBodyComp,'=');
                 if ($eqSign===FALSE){
+                    // no equal sign detected
                     if (count($fieldBodyComps)>1){
                         $header[$fieldName][$fieldBodyCompIndex]=$fieldBodyComp;
                     } else {
                         $header[$fieldName]=$fieldBodyComp;
                     }
                 } else {
+                    // equal sign detected
                     $subKey=substr($fieldBodyComp,0,$eqSign);
                     $subValue=substr($fieldBodyComp,$eqSign+1);
                     $header[$fieldName][$subKey]=$subValue;
