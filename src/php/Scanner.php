@@ -99,11 +99,13 @@ final class Scanner{
         $msgBodyLines=explode("\r\n",$msgBody);
         foreach($msgBodyLines as $lineIndex=>$line){
             $line.="\r\n";
+            // an empty line separates header from content - update header string
             if (empty(trim($line,"\r\n"))){
                 $isHeader=FALSE;
                 continue;
             }
             if ($isHeader){$header.=$line;}
+            // detect boundaries
             if (strpos($line,'--')===0 && strpos($line,'-->')===FALSE){
                 $isHeader=TRUE;
                 $headerArr=$this->processHeader($header,array('boundaries'=>$boundaries));
@@ -120,6 +122,7 @@ final class Scanner{
                 $body=$this->addBodyPart($body,$headerArr,$content);
                 $content=$header='';
             }
+            // update content string
             if (!$isHeader){$content.=$line;}
         
         }
