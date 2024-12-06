@@ -132,14 +132,16 @@ final class Scanner{
     private function addBodyPart(array $body,array $headerArr,string $content):array
     {
         if (empty(trim($content))){return $body;}
+        // decode content
         if (!empty($headerArr['content-transfer-encoding'])){
             $content=$this->decodeContent($content,$headerArr['content-transfer-encoding']);
         }
-
+        /*
         if (!empty($headerArr['content-disposition']['filename'])){
             $file='../tmp/'.trim($headerArr['content-disposition']['filename'],'"');
             file_put_contents($file,$content);
         }
+        */
         $key=$this->keyFromHeaderArr($headerArr);
         $body[$key]=array('header'=>$headerArr,'content'=>$content);
         return $body;
