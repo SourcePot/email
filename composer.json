@@ -1,0 +1,18 @@
+{
+    "name":"sourcepot/email",
+    "type":"library",
+    "description":"PHP class to convert an email into an array",
+    "keywords":["email"],
+    "homepage":"https://datapool.info",
+    "license":"MIT",
+    "authors":[{"name":"Carsten Wallenhauer","email":"admin@datapool.info"}],
+    "require":{
+        "php":">=8.0",
+        "hfig/mapi":">=v1.3.0"
+    },
+    "autoload":{
+        "psr-4":{
+            "SourcePot\\Email\\":"src\\php"
+        }
+    }
+}
