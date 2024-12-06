@@ -1,7 +1,7 @@
 <?php
 /*
-* This file is part of the MsgToFiles package.
-* @package MsgToFiles
+* This file creates an HTML page with a form for uploading an e-mail file and converting it into an array.
+* @package email
 * @author Carsten Wallenhauer <admin@datapool.info>
 * @copyright 2024 to today Carsten Wallenhauer
 * @license https://opensource.org/license/mit MIT
