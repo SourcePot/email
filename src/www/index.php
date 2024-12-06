@@ -20,12 +20,15 @@ $header='';
 $body='';
 if (isset($_POST['process'])){
     if (is_file($_FILES['msg']['tmp_name'])){
+        if (!is_dir('../tmp/')){mkdir('../tmp/');}
         move_uploaded_file($_FILES['msg']['tmp_name'],'../tmp/test.msg');
         $msgContent=file_get_contents('../tmp/test.msg');
         $msgObj=new Scanner($msgContent);
         // present header
         foreach($msgObj->getHeader() as $key=>$value){
-            if (is_array($value)){
+            if (is_object($value)){
+                $header.=$key.': (obj) '.($value->format('Y-m-d H:i:s'))."\n";
+            } else if (is_array($value)){
                 foreach($value as $subKey=>$subValue){
                     $header.=$key.' | '.$subKey.': '.$subValue."\n";
                 }
