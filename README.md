@@ -8,13 +8,13 @@ The scanner class extracts the content and headers of an e-mail that is read in 
 
 ## First  steps using the Scanner class in your project
 
-Create an instance of the Scanner class:
+Create an instance of the Scanner class and load the email into the scanner. The results can be retrieved using the getHeader() and getParts() methods:
 ```
 $scanner = new SourcePot\Email\Scanner();
 $scanner->load($email);
 
 $emailTransferHeader = $scanner->getHeader();
-$emailParts = $scanner->getBody();
+$emailParts = $scanner->getParts();
 ```
         
 ## Test website

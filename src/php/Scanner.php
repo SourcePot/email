@@ -56,7 +56,7 @@ final class Scanner{
         return $this->transferHeader;
     }
 
-    public function getBody():array
+    public function getParts():array
     {
         return $this->body;
     }

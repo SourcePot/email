@@ -32,7 +32,7 @@ if (isset($_POST['process'])){
         $msgContent=file_get_contents(TMP_DIR.'test.msg');
         $msgObj=new Scanner($msgContent);
         $headerArr=$msgObj->getHeader();
-        $bodyArr=$msgObj->getBody();
+        $bodyArr=$msgObj->getParts();
     }
 }
 // compile html
