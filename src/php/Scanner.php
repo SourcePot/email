@@ -105,15 +105,6 @@ final class Scanner{
 
     private function processStdMeg(string $msg,array $header=array())
     {
-        
-        /*
-        if (($header['MIME-type']??'')==='multipart/related'){
-            var_dump($header);
-            var_dump('Is mutipart: '.intval($header['boundary']));
-            var_dump(substr($msg,0,400));
-        }
-        */
-
         if (empty($header)){
             // initial method call - transfer header will be set
             $msgSections=$this->separateHeaderBody($msg,TRUE);
@@ -194,7 +185,7 @@ final class Scanner{
                 if (!empty($boundaryMatch[0])){$header['MIME-type']=$mimeMatch[0];}
                 if (mb_strpos($fieldBody,'multipart/')!==FALSE){$header['isMultipart']=TRUE;}
             }
-            // seperate into field body comps
+            // seperate into fieldBody comps
             $fieldBodyComps=explode('||',preg_replace('/([^"])(;)([^"])/','$1||$3',$fieldBody));
             foreach($fieldBodyComps as $fieldBodyCompIndex=>$fieldBodyComp){
                 $fieldBodyComp=trim($fieldBodyComp);
