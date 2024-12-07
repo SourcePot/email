@@ -24,7 +24,7 @@ Create an instance of the Scanner class:
 $scanner = new \SourcePot\Email\Scanner();
 $scanner->load($email);
 
-$emailTransferHeader = $msgObj->getHeader();
-$emailParts = $msgObj->getBody();
+$emailTransferHeader = $scanner->getHeader();
+$emailParts = $scanner->getBody();
 ```
         
