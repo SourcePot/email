@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace SourcePot\Email;
 
-require_once '../../vendor/autoload.php';
+require_once('../../vendor/autoload.php');
 
 final class Scanner{
 
