@@ -22,7 +22,7 @@ A test website is part of the pact. An e-mail can be loaded as a file into a tem
 
 Let's start with gthe following test email:
 
-<img src="./assets/test_message.png" alt="Test email" style="width:400px;"/>
+<img src="./assets/test_message.png" alt="Test email" style="width:400px;box-shadow:5px 5px 10px #000;"/>
 
 The test email is dragged & dropped form Thunderbird into the Windows file explorer:
 
