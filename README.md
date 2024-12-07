@@ -10,7 +10,7 @@ The scanner class extracts the content and headers of an e-mail that is read in 
 
 Create an instance of the Scanner class:
 ```
-$scanner = new \SourcePot\Email\Scanner();
+$scanner = new SourcePot\Email\Scanner();
 $scanner->load($email);
 
 $emailTransferHeader = $scanner->getHeader();
