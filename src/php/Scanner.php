@@ -20,7 +20,7 @@ final class Scanner{
     private $rawMsg='';
     private $prefixArr=array();
     private $suffixArr=array();
-    private $body=array();
+    private $parts=array();
     private $msgHash='';
 
     private $transferHeader=array();
@@ -35,7 +35,7 @@ final class Scanner{
 
     public function load(string $msg)
     {
-        $this->transferHeader=$this->body=array();
+        $this->transferHeader=$this->parts=array();
         $this->rawMsg=$msg;
         if (stripos($msg,'Delivery-date:')===FALSE && stripos($msg,'Received:')===FALSE){
             // process ole message, e.g. *.msg (Outlook)
@@ -58,7 +58,7 @@ final class Scanner{
 
     public function getParts():array
     {
-        return $this->body;
+        return $this->parts;
     }
 
     private function setHeader(array $header)
@@ -84,12 +84,12 @@ final class Scanner{
         $header=$this->processHeader($message->properties()->transport_message_headers);
         $this->setHeader($header);
         // create body
-        $envelope='--'.md5($message->properties()->body);
+        $envelope='--'.md5($message->properties()->parts);
         $boundaries=array($envelope=>TRUE);
         $headerArr=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/plain','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
-        $this->body=$this->addBodyPart($this->body,$headerArr,$message->properties()->body);
+        $this->parts=$this->addPart($this->parts,$headerArr,$message->properties()->parts);
         $headerArr=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/html','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
-        $this->body=$this->addBodyPart($this->body,$headerArr,$message->properties()->body_html);
+        $this->parts=$this->addPart($this->parts,$headerArr,$message->properties()->parts_html);
         // add attachments
         foreach($message->getAttachments() as $attachment){
             $fileName=$attachment->getFilename();
@@ -97,7 +97,7 @@ final class Scanner{
             $attachmentEnvelope='--'.md5($idHash);
             $boundaries[$attachmentEnvelope]=TRUE;
             $headerArr=array('boundaries'=>$boundaries,'content-type'=>array('0'=>$attachment->getMimeType(),'name'=>$fileName),'content-disposition'=>array(0=>'attachment','filename'=>$fileName));
-            $this->body=$this->addBodyPart($this->body,$headerArr,$attachment->getData());
+            $this->parts=$this->addPart($this->parts,$headerArr,$attachment->getData());
             $boundaries[$attachmentEnvelope]=FALSE;
         }
         $boundaries[$envelope]=FALSE;
@@ -148,7 +148,7 @@ final class Scanner{
                 // no multipart message - final content
                 $header=$this->getContentHeader($header);
                 $header['boundaries']=$this->boundaries;
-                $this->body=$this->addBodyPart($this->body,$header,$msg);
+                $this->parts=$this->addPart($this->parts,$header,$msg);
             }
         }
     }
@@ -238,7 +238,7 @@ final class Scanner{
         return $contentHeader;
     }
 
-    private function addBodyPart(array $body,array $headerArr,string $content):array
+    private function addPart(array $body,array $headerArr,string $content):array
     {
         if (empty(trim($content))){return $body;}
         // decode content
