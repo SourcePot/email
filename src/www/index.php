@@ -34,6 +34,10 @@ $html='<!DOCTYPE html>
         <head>
         <meta charset="utf-8">
         <title>E-mail</title>
+        <style>
+            tr:hover{background-color:#ccc;}
+            td{border-left:1px dotted #444;padding:2px;}
+        </style>
         </head>
         <body><form name="892d183ba51083fc2a0b3d4d6453e20b" id="892d183ba51083fc2a0b3d4d6453e20b" method="post" enctype="multipart/form-data">';
 $html.='<h1 style="float:left;clear:both;margin:1em 0em 0.5em">E-mail scanner test page</h1>';
@@ -41,7 +45,7 @@ $html.='<div style="float:left;clear:both;padding:0.25em 1em;border:1px solid #0
 $html.='</form>';
 $html.='<p style="float:left;clear:both;display:block;white-space:pre;word-break:break-all;word-wrap:anywhere;width:95vw;"><br/>';
 if (!empty($headerArr)){
-    $html.='<table style="margin:2rem 0 1rem 0;box-shadow:5px 5px 10px #000;">';
+    $html.='<table style="float:left;clear:none;margin:1rem 0.5rem;box-shadow:5px 5px 10px #000;">';
     $html.='<caption style="font-size:1.5rem;font-weight:bold;">E-mail Transfer Header</caption>';
     foreach($headerArr as $key=>$valueArr){
         if (!is_array($valueArr)){$valueArr=array(''=>$valueArr);}
@@ -52,7 +56,7 @@ if (!empty($headerArr)){
                 $value=json_encode($value);
             }
             $html.='<tr>';
-            $html.='<td style="">'.$key.'</td><td style="">'.$subKey.'</td><td style="">'.wordwrap(htmlentities($value),80,'<br/>',TRUE).'</td>';
+            $html.='<td style="">'.$key.'</td><td style="">'.$subKey.'</td><td style="">'.wordwrap(htmlentities($value),60,'<br/>',TRUE).'</td>';
             $html.='</tr>';
         }
     }
@@ -61,7 +65,7 @@ if (!empty($headerArr)){
 
 if (!empty($bodyArr)){
     $oldKey=$oldSubKey='';
-    $html.='<table style="margin:2rem 0 1rem 0;box-shadow:5px 5px 10px #000;">';
+    $html.='<table style="float:left;clear:none;margin:1rem 0.5rem;box-shadow:5px 5px 10px #000;">';
     $html.='<caption style="font-size:1.5rem;font-weight:bold;">E-mail Parts Header</caption>';
     foreach($bodyArr as $key=>$valueArrArr){
         $valueArrArr=$valueArrArr['header'];
