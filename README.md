@@ -18,7 +18,12 @@ $emailParts = $scanner->getParts();
 ```
         
 ## Test website
-A test website is part of the pact. An e-mail can be loaded as a file into a temporary directory via the test site and then processed by the scanner class.
+A test website is part of the pact. An e-mail can be uploaded as a file to a temporary directory via the test website and then processed by the scanner class.
+
+To use classes of the package or the test website, you must install the package on your computer (in the web directory of your localhost). After installation, you can open the test website via your browser. The easiest way to install the package is to use Composer. First make sure that Composer is already installed and then use the command prompt to execute the installation command:
+```
+composer create-project sourcepot/email {... add target web-directory here ...}
+```
 
 Let's start with gthe following test email:
 
