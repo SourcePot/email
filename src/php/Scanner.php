@@ -128,7 +128,7 @@ final class Scanner{
                     $msgPrefix=array_shift($msgParts);
                     if (!empty($msgPrefix)){$this->prefixArr[]=$msgPrefix;}
                     if (!empty($msgSuffix)){$this->suffixArr[]=$msgSuffix;}
-                    // loop through parts within gthe current boundary
+                    // loop through parts within the current boundary
                     foreach($msgParts as $msgPart){
                         $msgPartSections=$this->separateHeaderBody($msgPart,FALSE,TRUE);
                         $this->processStdMeg($msgPartSections['body'],$msgPartSections['header']);
