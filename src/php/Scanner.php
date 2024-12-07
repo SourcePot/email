@@ -120,7 +120,6 @@ final class Scanner{
             $this->transferHeader=$msgSections['header'];
             $this->processStdMeg($msgSections['body'],$this->transferHeader);
         } else {
-            
             if ($header['isMultipart']){
                 // mutipart message needs further separation
                 if (empty($header['boundary'])){
