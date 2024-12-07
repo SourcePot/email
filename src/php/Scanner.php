@@ -35,7 +35,7 @@ final class Scanner{
         $this->rawMsg=$msg;
         if (stripos($msg,'Delivery-date:')===FALSE && stripos($msg,'Received:')===FALSE){
             // process ole message, e.g. *.msg (Outlook)
-            $msg=$this->processOutlookMsg($msg);
+            $msg=$this->processOleMsg($msg);
         } else {
             // process standard message, e.g. *.eml (Thunderbird)
             $this->processRawMsfg($msg);
@@ -68,7 +68,7 @@ final class Scanner{
         $this->msgHash=sha1($hashStr);
     }
 
-    private function processOutlookMsg(string $msg)
+    private function processOleMsg(string $msg)
     {
         // create message object
         $messageFactory = new \Hfig\MAPI\MapiMessageFactory();
@@ -114,7 +114,7 @@ final class Scanner{
         $this->body=$this->processBody($msgBody);
     }
 
-    private function processHeader(string $msgHeader,array $header=array()):array
+    private function processHeader(string $msgHeader,array $header=array(),bool $separateKeyValuePairs=FALSE):array
     {
         // unfold header fields
         $msgHeader=preg_replace('/\r\n\s+/',' ',$msgHeader);
@@ -137,7 +137,7 @@ final class Scanner{
                 }
                 // decode values
                 $eqSign=strpos($fieldBodyComp,'=');
-                if ($eqSign===FALSE){
+                if ($eqSign===FALSE || !$separateKeyValuePairs){
                     // no equal sign detected
                     if (count($fieldBodyComps)>1){
                         $header[$fieldName][$fieldBodyCompIndex]=$fieldBodyComp;
@@ -175,7 +175,7 @@ final class Scanner{
             // detect boundaries
             if (strpos($line,'--')===0 && strpos($line,'-->')===FALSE){
                 $isHeader=TRUE;
-                $headerArr=$this->processHeader($header,array('boundaries'=>$boundaries));
+                $headerArr=$this->processHeader($header,array('boundaries'=>$boundaries),TRUE);
                 // update boundary
                 $boundaryA=trim($line);
                 $boundaryA=substr($boundaryA,2);
@@ -203,12 +203,6 @@ final class Scanner{
         if (!empty($headerArr['content-transfer-encoding'])){
             $content=$this->decodeContent($content,$headerArr['content-transfer-encoding']);
         }
-        /*
-        if (!empty($headerArr['content-disposition']['filename'])){
-            $file='../tmp/'.trim($headerArr['content-disposition']['filename'],'"');
-            file_put_contents($file,$content);
-        }
-        */
         $key=$this->keyFromHeaderArr($headerArr);
         $body[$key]=array('header'=>$headerArr,'content'=>$content);
         return $body;
