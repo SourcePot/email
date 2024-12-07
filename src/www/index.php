@@ -35,18 +35,23 @@ $html='<!DOCTYPE html>
         <meta charset="utf-8">
         <title>E-mail</title>
         <style>
+            *{font-family: system-ui;}
             tr:hover{background-color:#ccc;}
             td{border-left:1px dotted #444;padding:2px;}
+            div{float:left;clear:both;width:95vw;padding:0.25em 1em;border:1px solid #000;background-color:antiquewhite;}
+            table{float:left;clear:none;margin:0.8rem 0.3rem;box-shadow:3px 3px 10px #777;}
+            caption{font-size:1.25rem;font-weight:bold;}
+            input[type=file]{background-color:white;}
+            input{cursor:pointer;}
         </style>
         </head>
         <body><form name="892d183ba51083fc2a0b3d4d6453e20b" id="892d183ba51083fc2a0b3d4d6453e20b" method="post" enctype="multipart/form-data">';
-$html.='<h1 style="float:left;clear:both;margin:1em 0em 0.5em">E-mail scanner test page</h1>';
-$html.='<div style="float:left;clear:both;padding:0.25em 1em;border:1px solid #000;"><label for="msg-file-upload">Upload your test message file</label><input type="file" name="msg" id="msg-file-upload" style="margin:0.25em;"/><input type="submit" name="process" id="msg-file-process" style="margin:0.25em;" value="Process"/></div>';
+$html.='<h1>E-mail scanner test page</h1>';
+$html.='<div><label for="msg-file-upload">Test file upload</label><input type="file" name="msg" id="msg-file-upload" style="margin:0.25em;"/><input type="submit" name="process" id="msg-file-process" style="margin:0.25em;" value="Process"/></div>';
 $html.='</form>';
-$html.='<p style="float:left;clear:both;display:block;white-space:pre;word-break:break-all;word-wrap:anywhere;width:95vw;"><br/>';
 if (!empty($headerArr)){
-    $html.='<table style="float:left;clear:none;margin:1rem 0.5rem;box-shadow:5px 5px 10px #000;">';
-    $html.='<caption style="font-size:1.5rem;font-weight:bold;">E-mail Transfer Header</caption>';
+    $html.='<table>';
+    $html.='<caption>E-mail Transfer Header</caption>';
     foreach($headerArr as $key=>$valueArr){
         if (!is_array($valueArr)){$valueArr=array(''=>$valueArr);}
         foreach($valueArr as $subKey=>$value){
@@ -56,7 +61,7 @@ if (!empty($headerArr)){
                 $value=json_encode($value);
             }
             $html.='<tr>';
-            $html.='<td style="">'.$key.'</td><td style="">'.$subKey.'</td><td style="">'.wordwrap(htmlentities($value),60,'<br/>',TRUE).'</td>';
+            $html.='<td style="">'.$key.'</td><td style="">'.$subKey.'</td><td style="">'.wordwrap(htmlentities($value),40,'<br/>',TRUE).'</td>';
             $html.='</tr>';
         }
     }
@@ -65,8 +70,8 @@ if (!empty($headerArr)){
 
 if (!empty($bodyArr)){
     $oldKey=$oldSubKey='';
-    $html.='<table style="float:left;clear:none;margin:1rem 0.5rem;box-shadow:5px 5px 10px #000;">';
-    $html.='<caption style="font-size:1.5rem;font-weight:bold;">E-mail Parts Header</caption>';
+    $html.='<table>';
+    $html.='<caption>E-mail Parts Header</caption>';
     foreach($bodyArr as $key=>$valueArrArr){
         $valueArrArr=$valueArrArr['header'];
         if (!is_array($valueArrArr)){$valueArrArr=array(''=>$valueArrArr);}
