@@ -25,7 +25,7 @@ To use classes of the package or the test website, you must install the package 
 composer create-project sourcepot/email {... add target web-directory here ...}
 ```
 
-Let's start with gthe following test email:
+Let's start with the following test email:
 
 <kbd><img src="./assets/test_message.png" alt="Test email" style="width:400px;"/></kbd>
 
@@ -33,7 +33,7 @@ The test email is dragged & dropped form Thunderbird into the Windows file explo
 
 <kbd><img src="./assets/test_message_upload.png" alt="Test copied to a folder on the computer" style="width:500px;"/></kbd>
 
-The test website is opened on the localhost, the email uploaded and processed, when the "Process" button is clicked. The e-mail transfer header and each e-mail part are displayed in a separate table. The folloing screenshot shows the test result:
+The test website is opened on the localhost. Select the email and upload the email, click the "Process" button to process the email. The e-mail transfer header and each e-mail part are displayed in a separate table. The folloing screenshot shows the test result:
 
 <kbd><img src="./assets/test_message_test_page.png" alt="Test email uploaded and processed"/></kbd>
 
