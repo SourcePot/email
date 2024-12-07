@@ -18,9 +18,13 @@ final class Scanner{
     public const DB_TIMEZONE='UTC';
 
     private $rawMsg='';
-    private $header=array();
+    private $prefixArr=array();
+    private $suffixArr=array();
     private $body=array();
     private $msgHash='';
+
+    private $transferHeader=array();
+    private $boundaries=array();
     
     function __construct(string $msg='')
     {
@@ -31,14 +35,14 @@ final class Scanner{
 
     public function load(string $msg)
     {
-        $this->header=$this->body=array();
+        $this->transferHeader=$this->body=array();
         $this->rawMsg=$msg;
         if (stripos($msg,'Delivery-date:')===FALSE && stripos($msg,'Received:')===FALSE){
             // process ole message, e.g. *.msg (Outlook)
             $msg=$this->processOleMsg($msg);
         } else {
             // process standard message, e.g. *.eml (Thunderbird)
-            $this->processRawMsfg($msg);
+            $this->processStdMeg($msg);
         }
     }
     
@@ -49,7 +53,7 @@ final class Scanner{
 
     public function getHeader():array
     {
-        return $this->header;
+        return $this->transferHeader;
     }
 
     public function getBody():array
@@ -59,11 +63,11 @@ final class Scanner{
 
     private function setHeader(array $header)
     {
-        $this->header=$header;
-        if (empty($this->header['message-id'])){
+        $this->transferHeader=$header;
+        if (empty($this->transferHeader['message-id'])){
             $hashStr=json_encode($header);
         } else {
-            $hashStr=$this->header['message-id'];
+            $hashStr=$this->transferHeader['message-id'];
         }
         $this->msgHash=sha1($hashStr);
     }
@@ -99,36 +103,105 @@ final class Scanner{
         $boundaries[$envelope]=FALSE;
     }
 
-    private function processRawMsfg($msg)
+    private function processStdMeg(string $msg,array $header=array())
     {
-        $separatorPos=mb_strpos($msg,"\r\n\r\n");
-        if ($separatorPos===FALSE){
-            throw new \Exception("Header to content separator not found."); 
+        
+        /*
+        if (($header['MIME-type']??'')==='multipart/related'){
+            var_dump($header);
+            var_dump('Is mutipart: '.intval($header['boundary']));
+            var_dump(substr($msg,0,400));
         }
-        // seperate header
-        $msgHeader=mb_substr($msg,0,$separatorPos);
-        $header=$this->processHeader($msgHeader);
-        $this->setHeader($header);
-        // separate body
-        $msgBody=mb_substr($msg,$separatorPos);
-        $this->body=$this->processBody($msgBody);
+        */
+
+        if (empty($header)){
+            // initial method call - transfer header will be set
+            $msgSections=$this->separateHeaderBody($msg,TRUE);
+            $this->transferHeader=$msgSections['header'];
+            $this->processStdMeg($msgSections['body'],$this->transferHeader);
+        } else {
+            
+            if ($header['isMultipart']){
+                // mutipart message needs further separation
+                if (empty($header['boundary'])){
+                    throw new \Exception('Multipart message but boundary not found.'); 
+                } else {
+                    $this->boundaries[]=$header['boundary'];
+                    $startBoundary="--".$header['boundary']."\r\n";
+                    $endBoundary="\r\n--".$header['boundary']."--\r\n";
+                    $msgChunks=explode($endBoundary,$msg);
+                    // get any content afte the end boundary
+                    $msgSuffix=array_pop($msgChunks);
+                    // get any content before the first start boundary
+                    $msgSections['body']=array_shift($msgChunks);
+                    $msgParts=explode($startBoundary,$msgSections['body']);
+                    $msgPrefix=array_shift($msgParts);
+                    if (!empty($msgPrefix)){$this->prefixArr[]=$msgPrefix;}
+                    if (!empty($msgSuffix)){$this->suffixArr[]=$msgSuffix;}
+                    // loop through parts within gthe current boundary
+                    foreach($msgParts as $msgPart){
+                        $msgPartSections=$this->separateHeaderBody($msgPart,FALSE,TRUE);
+                        $this->processStdMeg($msgPartSections['body'],$msgPartSections['header']);
+                    }
+                }
+            } else {
+                // no multipart message - final content
+                $header=$this->getContentHeader($header);
+                $header['boundaries']=$this->boundaries;
+                $this->body=$this->addBodyPart($this->body,$header,$msg);
+            }
+        }
+    }
+
+    private function separateHeaderBody(string $msg,bool $strict=FALSE,bool $separateKeyValuePairs=FALSE):array
+    {
+        $arr=array('header'=>array(),'body'=>'');
+        $separator="\r\n\r\n";
+        $separatorPos=mb_strpos($msg,$separator)+mb_strlen($separator);
+        if ($separatorPos===FALSE && $strict){
+            throw new \Exception('Faild to dived message into sections, separator missing.'); 
+        } else {
+            // seperate header
+            $msgHeader=mb_substr($msg,0,$separatorPos);
+            $arr['header']=$this->processHeader($msgHeader,array(),$separateKeyValuePairs);
+            // separate body
+            $arr['body']=mb_substr($msg,$separatorPos);
+        }
+        return $arr;
     }
 
     private function processHeader(string $msgHeader,array $header=array(),bool $separateKeyValuePairs=FALSE):array
     {
+        $header['MIME-type']=$header['MIME-type']??'';
+        $header['isMultipart']=FALSE;
+        $header['boundary']=$header['boundary']??'';
         // unfold header fields
         $msgHeader=preg_replace('/\r\n\s+/',' ',$msgHeader);
         // get header fields and loop through these fields
         preg_match_all('/([^:]+):([^\r\n]+)\r\n/',$msgHeader,$fields);
-        foreach($fields[1] as $index=>$fieldName){
-            $fieldName=strtolower($fieldName);
-            $fieldBody=$fields[2][$index];
+        $lines=explode("\r\n",$msgHeader);
+        $fieldSep=': ';
+        foreach($lines as $line){
+            $nameValueSepPos=mb_strpos($line,$fieldSep);
+            if ($nameValueSepPos===FALSE){continue;}
+            $fieldName=mb_substr($line,0,$nameValueSepPos);
+            $fieldName=mb_strtolower($fieldName);
+            $fieldBody=mb_substr($line,$nameValueSepPos+mb_strlen($fieldSep));
+            // get boundary and content type
+            if ($fieldName=="content-type"){
+                preg_match('/boundary="([^"]+)"/',$fieldBody,$boundaryMatch);
+                if (!empty($boundaryMatch[1])){$header['boundary']=$boundaryMatch[1];}
+                preg_match('/\w+\/\w+/',$fieldBody,$mimeMatch);
+                if (!empty($boundaryMatch[0])){$header['MIME-type']=$mimeMatch[0];}
+                if (mb_strpos($fieldBody,'multipart/')!==FALSE){$header['isMultipart']=TRUE;}
+            }
+            // seperate into field body comps
             $fieldBodyComps=explode('||',preg_replace('/([^"])(;)([^"])/','$1||$3',$fieldBody));
             foreach($fieldBodyComps as $fieldBodyCompIndex=>$fieldBodyComp){
                 $fieldBodyComp=trim($fieldBodyComp);
                 // mime decode
                 if (strpos($fieldBodyComp,'=?')!==FALSE && strpos($fieldBodyComp,'?=')!==FALSE){
-                    $fieldBodyComp=iconv_mime_decode($fieldBodyComp,0,"UTF-8");
+                    $fieldBodyComp=iconv_mime_decode($fieldBodyComp,0,"utf-8");
                 }
                 // get date time object
                 $dateTimeObj=$this->getDateTimeObj($fieldBodyComp);
@@ -148,52 +221,21 @@ final class Scanner{
                     // equal sign detected
                     $subKey=substr($fieldBodyComp,0,$eqSign);
                     $subValue=substr($fieldBodyComp,$eqSign+1);
-                    $header[$fieldName][$subKey]=$subValue;
+                    $header[$fieldName][$subKey]=trim($subValue,'"');
                 }
             }
         }
         return $header;
     }
 
-    private function processBody($msgBody):array
-    {
-        $body=array();
-        // scan body
-        $isHeader=FALSE;
-        $header='';
-        $content='';
-        $boundaries=array();
-        $msgBodyLines=explode("\r\n",$msgBody);
-        foreach($msgBodyLines as $lineIndex=>$line){
-            $line.="\r\n";
-            // an empty line separates header from content - update header string
-            if (empty(trim($line,"\r\n"))){
-                $isHeader=FALSE;
-                continue;
+    private function getContentHeader(array $header):array{
+        $contentHeader=array();
+        foreach($header as $key=>$value){
+            if (mb_strpos($key,'content-')===0 || ($key==='boundary' && !empty($value)) || $key==='MIME-type'){
+                $contentHeader[$key]=$value;
             }
-            if ($isHeader){$header.=$line;}
-            // detect boundaries
-            if (strpos($line,'--')===0 && strpos($line,'-->')===FALSE){
-                $isHeader=TRUE;
-                $headerArr=$this->processHeader($header,array('boundaries'=>$boundaries),TRUE);
-                // update boundary
-                $boundaryA=trim($line);
-                $boundaryA=substr($boundaryA,2);
-                $bounderyB=rtrim($boundaryA,'-');
-                if ($boundaryA===$bounderyB){
-                    $boundaries[$boundaryA]=TRUE;
-                } else {
-                    $boundaries[$bounderyB]=FALSE;
-                }
-                // update body
-                $body=$this->addBodyPart($body,$headerArr,$content);
-                $content=$header='';
-            }
-            // update content string
-            if (!$isHeader){$content.=$line;}
-        
         }
-        return $body;
+        return $contentHeader;
     }
 
     private function addBodyPart(array $body,array $headerArr,string $content):array
@@ -204,7 +246,8 @@ final class Scanner{
             $content=$this->decodeContent($content,$headerArr['content-transfer-encoding']);
         }
         $key=$this->keyFromHeaderArr($headerArr);
-        $body[$key]=array('header'=>$headerArr,'content'=>$content);
+        $headerArr['data']['size']=strlen($content);
+        $body[$key]=array('header'=>$headerArr,'data'=>$content);
         return $body;
     }
 
@@ -252,9 +295,9 @@ final class Scanner{
         if (isset($headerArr['content-type'][0])){
             $key.='['.$headerArr['content-type'][0].']';
         }
-        if (isset($this->header['subject'])){
-            $suffix=(mb_strlen($this->header['subject'])>40)?'... ':' ';
-            $key=mb_substr($this->header['subject'],0,40).$suffix.$key;
+        if (isset($this->transferHeader['subject'])){
+            $suffix=(mb_strlen($this->transferHeader['subject'])>40)?'... ':' ';
+            $key=mb_substr($this->transferHeader['subject'],0,40).$suffix.$key;
         }
         return $key;
     }
