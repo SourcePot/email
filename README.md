@@ -33,7 +33,7 @@ The test email is dragged & dropped form Thunderbird into the Windows file explo
 
 <kbd><img src="./assets/test_message_upload.png" alt="Test copied to a folder on the computer" style="width:500px;"/></kbd>
 
-The test website is opened on the localhost. Select the email and upload the email, click the "Process" button to process the email. The e-mail transfer header and each e-mail part are displayed in a separate table. The folloing screenshot shows the test result, can you see the preview for attachment?
+The test website is opened on the localhost. Select the email and upload the email, click the "Process" button to process the email. The e-mail transfer header and each e-mail part are displayed in a separate table. The folloing screenshot shows the test result, can you see the preview of attachment?
 
 <kbd><img src="./assets/test_message_test_page.png" alt="Test email uploaded and processed"/></kbd>
 
