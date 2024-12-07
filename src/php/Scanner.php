@@ -86,18 +86,18 @@ final class Scanner{
         // create body
         $envelope='--'.md5($message->properties()->parts);
         $boundaries=array($envelope=>TRUE);
-        $headerArr=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/plain','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
-        $this->parts=$this->addPart($this->parts,$headerArr,$message->properties()->parts);
-        $headerArr=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/html','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
-        $this->parts=$this->addPart($this->parts,$headerArr,$message->properties()->parts_html);
+        $header=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/plain','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
+        $this->parts=$this->addPart($this->parts,$header,$message->properties()->parts);
+        $header=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/html','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
+        $this->parts=$this->addPart($this->parts,$header,$message->properties()->parts_html);
         // add attachments
         foreach($message->getAttachments() as $attachment){
             $fileName=$attachment->getFilename();
             $idHash=$attachment->getContentId()??$fileName;
             $attachmentEnvelope='--'.md5($idHash);
             $boundaries[$attachmentEnvelope]=TRUE;
-            $headerArr=array('boundaries'=>$boundaries,'content-type'=>array('0'=>$attachment->getMimeType(),'name'=>$fileName),'content-disposition'=>array(0=>'attachment','filename'=>$fileName));
-            $this->parts=$this->addPart($this->parts,$headerArr,$attachment->getData());
+            $header=array('boundaries'=>$boundaries,'content-type'=>array('0'=>$attachment->getMimeType(),'name'=>$fileName),'content-disposition'=>array(0=>'attachment','filename'=>$fileName));
+            $this->parts=$this->addPart($this->parts,$header,$attachment->getData());
             $boundaries[$attachmentEnvelope]=FALSE;
         }
         $boundaries[$envelope]=FALSE;
@@ -238,16 +238,16 @@ final class Scanner{
         return $contentHeader;
     }
 
-    private function addPart(array $body,array $headerArr,string $content):array
+    private function addPart(array $body,array $header,string $content):array
     {
         if (empty(trim($content))){return $body;}
         // decode content
-        if (!empty($headerArr['content-transfer-encoding'])){
-            $content=$this->decodeContent($content,$headerArr['content-transfer-encoding']);
+        if (!empty($header['content-transfer-encoding'])){
+            $content=$this->decodeContent($content,$header['content-transfer-encoding']);
         }
-        $key=$this->keyFromHeaderArr($headerArr);
-        $headerArr['data']['size']=strlen($content);
-        $body[$key]=array('header'=>$headerArr,'data'=>$content);
+        $key=$this->keyFromHeaderArr($header);
+        $header['data']['size']=strlen($content);
+        $body[$key]=array('header'=>$header,'data'=>$content);
         return $body;
     }
 
@@ -277,10 +277,10 @@ final class Scanner{
         }
     }
 
-    private function keyFromHeaderArr(array $headerArr):string
+    private function keyFromHeaderArr(array $header):string
     {
         $key='';
-        foreach($headerArr['boundaries'] as $boundary=>$isActive){
+        foreach($header['boundaries'] as $boundary=>$isActive){
             if (!$isActive){continue;}
             if (!empty($key)){$key.=',';}
             $hash=md5($boundary.$this->msgHash);
@@ -292,8 +292,8 @@ final class Scanner{
         if (!empty($key)){
             $key='('.$key.')';
         }
-        if (isset($headerArr['content-type'][0])){
-            $key.='['.$headerArr['content-type'][0].']';
+        if (isset($header['content-type'][0])){
+            $key.='['.$header['content-type'][0].']';
         }
         if (isset($this->transferHeader['subject'])){
             $suffix=(mb_strlen($this->transferHeader['subject'])>40)?'... ':' ';
