@@ -22,11 +22,11 @@ A test website is part of the pact. An e-mail can be loaded as a file into a tem
 
 ### Let's start with gthe following test email:
 
-<img src="./assets/test_message.png" alt="Test email" style="max-width:200px;"/>
+<img src="./assets/test_message.png" alt="Test email" style="width:400px;"/>
 
 ### The test email is dragged & dropped form Thunderbird into the Windows file explorer:
 
-<img src="./assets/test_message_upload.png" alt="Test copied to a folder on the computer" style="max-width:400px;"/>
+<img src="./assets/test_message_upload.png" alt="Test copied to a folder on the computer" style="width:500px;"/>
 
 ### The test website is opened on the localhost, the email uploaded and processed, when the "Process" button is clicked. The folloing screenshot shows the test result:
 
