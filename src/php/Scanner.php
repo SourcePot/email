@@ -84,12 +84,12 @@ final class Scanner{
         $header=$this->processHeader($message->properties()->transport_message_headers);
         $this->setHeader($header);
         // create body
-        $envelope='--'.md5($message->properties()->parts);
+        $envelope='--'.md5($message->properties()->body);
         $boundaries=array($envelope=>TRUE);
         $header=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/plain','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
-        $this->parts=$this->addPart($this->parts,$header,$message->properties()->parts);
+        $this->parts=$this->addPart($this->parts,$header,$message->properties()->body);
         $header=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/html','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
-        $this->parts=$this->addPart($this->parts,$header,$message->properties()->parts_html);
+        $this->parts=$this->addPart($this->parts,$header,$message->properties()->body_html);
         // add attachments
         foreach($message->getAttachments() as $attachment){
             $fileName=$attachment->getFilename();
@@ -107,14 +107,14 @@ final class Scanner{
     {
         if (empty($header)){
             // initial method call - transfer header will be set
-            $msgSections=$this->separateHeaderBody($msg,TRUE);
+            $msgSections=$this->separateHeaderBody($msg,TRUE,FALSE);
             $this->transferHeader=$msgSections['header'];
             $this->processStdMeg($msgSections['body'],$this->transferHeader);
         } else {
             if ($header['isMultipart']){
                 // mutipart message needs further separation
                 if (empty($header['boundary'])){
-                    throw new \Exception('Multipart message but boundary not found.'); 
+                    throw new \Exception('Multipart message "'.$this->transferHeader['subject'].'" but boundary not found.'); 
                 } else {
                     $this->boundaries[]=$header['boundary'];
                     $startBoundary="--".$header['boundary']."\r\n";
@@ -177,27 +177,32 @@ final class Scanner{
             $fieldName=mb_substr($line,0,$nameValueSepPos);
             $fieldName=mb_strtolower($fieldName);
             $fieldBody=mb_substr($line,$nameValueSepPos+mb_strlen($fieldSep));
+            // mime decode
+            if (strpos($fieldBody,'=?')!==FALSE && strpos($fieldBody,'?=')!==FALSE){
+                $fieldBody=iconv_mime_decode($fieldBody,0,"utf-8");
+            }
             // get boundary and content type
             if ($fieldName=="content-type"){
-                preg_match('/boundary="([^"]+)"/',$fieldBody,$boundaryMatch);
+                preg_match('/boundary="{0,1}([^"]+)"{0,1}/',$fieldBody,$boundaryMatch);
                 if (!empty($boundaryMatch[1])){$header['boundary']=$boundaryMatch[1];}
                 preg_match('/\w+\/\w+/',$fieldBody,$mimeMatch);
                 if (!empty($boundaryMatch[0])){$header['MIME-type']=$mimeMatch[0];}
                 if (mb_strpos($fieldBody,'multipart/')!==FALSE){$header['isMultipart']=TRUE;}
             }
+            // add date time object
+            $dateTimeObj=$this->getDateTimeObj($fieldBody);
+            if ($dateTimeObj){
+                $header[$fieldName.' dateTimeObj']=$dateTimeObj;
+            }
+            // add mailboxes
+            $mailboxes=$this->getMailboxes($fieldBody);
+            if (!empty($mailboxes)){
+                $header[$fieldName.' mailboxes']=$mailboxes;
+            }
             // seperate into fieldBody comps
-            $fieldBodyComps=explode('||',preg_replace('/([^"])(;)([^"])/','$1||$3',$fieldBody));
+            $fieldBodyComps=preg_split('/;\s/',$fieldBody);
             foreach($fieldBodyComps as $fieldBodyCompIndex=>$fieldBodyComp){
                 $fieldBodyComp=trim($fieldBodyComp);
-                // mime decode
-                if (strpos($fieldBodyComp,'=?')!==FALSE && strpos($fieldBodyComp,'?=')!==FALSE){
-                    $fieldBodyComp=iconv_mime_decode($fieldBodyComp,0,"utf-8");
-                }
-                // get date time object
-                $dateTimeObj=$this->getDateTimeObj($fieldBodyComp);
-                if ($dateTimeObj){
-                    $header[$fieldName.' dateTimeObj']=$dateTimeObj;
-                }
                 // decode values
                 $eqSign=strpos($fieldBodyComp,'=');
                 if ($eqSign===FALSE || !$separateKeyValuePairs){
@@ -228,17 +233,17 @@ final class Scanner{
         return $contentHeader;
     }
 
-    private function addPart(array $body,array $header,string $content):array
+    private function addPart(array $part,array $header,string $content):array
     {
-        if (empty(trim($content))){return $body;}
+        if (empty(trim($content))){return $part;}
         // decode content
         if (!empty($header['content-transfer-encoding'])){
             $content=$this->decodeContent($content,$header['content-transfer-encoding']);
         }
         $key=$this->keyFromHeaderArr($header);
         $header['data']['size']=strlen($content);
-        $body[$key]=array('header'=>$header,'data'=>$content);
-        return $body;
+        $part[$key]=array('header'=>$header,'data'=>$content);
+        return $part;
     }
 
     private function decodeContent(string $content,string $encoding)
@@ -259,12 +264,40 @@ final class Scanner{
     private function getDateTimeObj(string $str)
     {
         // if date time string -> create dateTime object
-        preg_match('/[A-Za-z]{3},\s\d{1,2}\s[A-Z-a-z]{3}\s\d{1,4}\s\d{2}:\d{2}:\d{2}\s[0-9+]{0,5}/',$str,$dateTimeArr);
+        preg_match('/[A-Za-z]{3},\s+\d{1,2}\s[A-Z-a-z]{3}\s\d{1,4}\s+\d{2}:\d{2}:\d{2}\s[0-9+]{0,5}/',$str,$dateTimeArr);
         if (empty($dateTimeArr[0])){
             return FALSE;
         } else {
             return \DateTime::createFromFormat(\DATE_RFC2822,$dateTimeArr[0]);
         }
+    }
+
+    private function getMailboxes(string $str):array{
+        $mailboxes=array();
+        if (mb_strpos($str,'@')>0 && mb_strpos($str,'.')>0){
+            $mailboxes=preg_split('/,\s("|<)/',$str);
+            if (count($mailboxes)===1){
+                $mailboxes=preg_split('/> </',$str);
+            }
+            foreach($mailboxes as $index=>$mailbox){
+                if (mb_strpos($mailbox,'<')!==FALSE && mb_strpos($mailbox,'>')>4){
+                    // type: ...<a@b.com>
+                    $mailboxComps=explode(' <',$mailbox);
+                    $mailboxAddr=array_pop($mailboxComps);
+                    $mailboxAddr=trim($mailboxAddr,' <>');
+                    $mailboxValue=(empty($mailboxComps))?'':(array_shift($mailboxComps));
+                    $mailboxValue=trim($mailboxValue,'"\'');
+                    $mailboxes[$index]=array('email'=>$mailboxAddr,'name'=>$mailboxValue);
+                    preg_match('/.+\s<[^>]+>/',$mailbox,$match);
+                } else {
+                    // a@b.com
+                    preg_match('/[^\s@=:;]+@[^\s@\.]+\.[a-zA-Z]+/',$mailbox,$match);
+                    $mailboxAddr=trim($match[0],'<>');
+                    $mailboxes[$index]=array('email'=>$mailboxAddr,'name'=>'');
+                }
+            }
+        }
+        return $mailboxes;
     }
 
     private function keyFromHeaderArr(array $header):string
@@ -273,14 +306,13 @@ final class Scanner{
         foreach($header['boundaries'] as $boundary=>$isActive){
             if (!$isActive){continue;}
             if (!empty($key)){$key.=',';}
-            $hash=md5($boundary.$this->msgHash);
-            $hash=base_convert($hash,16,32);
-            $hash=str_replace('0','',$hash);
-            $hash=str_replace('|','x',$hash);
-            $key.=$hash;
+            $key.=$this->shortHash($boundary.$this->msgHash);
         }
         if (!empty($key)){
             $key='('.$key.')';
+        }
+        if (isset($header['content-id'])){
+            $key.='{'.$this->shortHash($header['content-id']).'}';
         }
         if (isset($header['content-type'][0])){
             $key.='['.$header['content-type'][0].']';
@@ -290,6 +322,15 @@ final class Scanner{
             $key=mb_substr($this->transferHeader['subject'],0,40).$suffix.$key;
         }
         return $key;
+    }
+
+    private function shortHash(string $str):string
+    {
+        $hash=md5($str);
+        $hash=base_convert($hash,16,32);
+        $hash=str_replace('0','',$hash);
+        $hash=str_replace('|','x',$hash);
+        return $hash;
     }
 
 }

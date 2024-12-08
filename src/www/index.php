@@ -72,7 +72,7 @@ if (!empty($headerArr)){
                 $value=json_encode($value);
             }
             $html.='<tr>';
-            $html.='<td style="">'.$key.'</td><td style="">'.$subKey.'</td><td style="">'.wordwrap(htmlentities(strval($value)),40,'<br/>',TRUE).'</td>';
+            $html.='<td style="">'.$key.'</td><td style="">'.$subKey.'</td><td style="">'.htmlentities(strval($value)).'</td>';
             $html.='</tr>';
         }
     }
@@ -96,8 +96,9 @@ if (!empty($bodyArr)){
                     $value=json_encode($value);
                 }
                 // compile value html
-                $valueHtml='<p>'.wordwrap(htmlentities(strval($value)),40,'<br>>',TRUE).'</p>';
+                $valueHtml='<p>'.htmlentities(strval($value)).'</p>';
                 if ($subKey==='content-disposition' && $subSubKey==='filename'){
+                    $fileNameParts=pathinfo($value);
                     $fileName=TMP_DIR.$value;
                     file_put_contents($fileName,$data);
                     $valueHtml.='<embed src="'.$fileName.'" type="'.$valueArrArr['content-type'][0].'"/>';
