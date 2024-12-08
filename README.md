@@ -23,7 +23,7 @@ $scanner = new SourcePot\Email\Scanner();
 
 $mbox=@imap_open({MAILBOX},{USER},{PASSWORD});
 
-$errors=imap_errors();  
+$errors=imap_errors();
 // add error handling code here
 
 $alerts=imap_alerts();
@@ -33,7 +33,7 @@ if (!empty($mbox)){
     $messages=imap_search($mbox,'SINCE "'.date('d-M-Y').'"');
     if ($messages){
         foreach($messages as $mid){
-            $email=\imap_fetchbody($mbox,$mid,"");
+            $email=imap_fetchbody($mbox,$mid,"");
             $scanner->load($email);
             // add code here to process the resulting $emailParts, $emailTransferHeader
         }
