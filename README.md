@@ -1,6 +1,6 @@
 # Email package
 
-So far the email package only contains the scanner class and a test website.
+This email package contains only the scanner class and a test website yet.
 
 ## Scanner class
 
