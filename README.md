@@ -8,23 +8,6 @@ The scanner class extracts the content and headers of an e-mail that is read in 
 
 ## First steps using the Scanner class in your project
 
-The source for an email can be a file upload or an IMAP mailbox folder. In the following example, an IMAP mailbox folder is opened and the current emails are looped through. The e-mails are represented as character strings. You need to provide the correct {MAILBOX}, {USER} and {PASSWORD} for the email folder.
-```
-$mbox=@imap_open({MAILBOX},{USER},{PASSWORD});
-$errors=imap_errors();  // add error handling
-$alerts=imap_alerts();  // add alarm handling
-
-if (!empty($mbox)){
-    $messages=imap_search($mbox,'SINCE "'.date('d-M-Y').'"');
-    if ($messages){
-        foreach($messages as $mid){
-            $email=\imap_fetchbody($mbox,$mid,"");
-            // load email into the instance of the scanner class here
-        }
-    }
-}    
-```
-
 Following code shows how an instance of the Scanner class is created and the email loaded into the scanner. The results can be retrieved using the getHeader() and getParts() methods:
 ```
 $scanner = new SourcePot\Email\Scanner();
@@ -33,7 +16,31 @@ $scanner->load($email);
 $emailTransferHeader = $scanner->getHeader();
 $emailParts = $scanner->getParts();
 ```
-        
+
+The source for an email can be a file upload or an IMAP mailbox folder. In the following example, an IMAP mailbox folder is opened and the current emails are looped through. The e-mails are represented as character strings. You need to provide the correct {MAILBOX}, {USER} and {PASSWORD} for the email folder.
+```
+$scanner = new SourcePot\Email\Scanner();
+
+$mbox=@imap_open({MAILBOX},{USER},{PASSWORD});
+
+$errors=imap_errors();  
+// add error handling code here
+
+$alerts=imap_alerts();
+// add alarm handling code here
+
+if (!empty($mbox)){
+    $messages=imap_search($mbox,'SINCE "'.date('d-M-Y').'"');
+    if ($messages){
+        foreach($messages as $mid){
+            $email=\imap_fetchbody($mbox,$mid,"");
+            $scanner->load($email);
+            // add code here to process the resulting $emailParts, $emailTransferHeader
+        }
+    }
+}    
+```
+
 ## Test website
 A test website is part of the package. An e-mail can be uploaded as a file to a temporary directory via the test website and then processed by the scanner class.
 
