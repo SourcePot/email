@@ -305,7 +305,7 @@ final class Scanner{
         $key='';
         foreach($header['boundaries'] as $boundary=>$isActive){
             if (!$isActive){continue;}
-            if (!empty($key)){$key.=',';}
+            if (!empty($key)){$key.='|';}
             $key.=$this->shortHash($boundary.$this->msgHash);
         }
         if (!empty($key)){
