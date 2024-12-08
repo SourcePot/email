@@ -17,7 +17,7 @@ $emailTransferHeader = $scanner->getHeader();
 $emailParts = $scanner->getParts();
 ```
 
-The source for an email can be a file upload or an IMAP mailbox folder. In the following example, an IMAP mailbox folder is opened and the current emails are looped through. The emails will be represented as character strings. You will need to provide the correct {MAILBOX}, {USER} and {PASSWORD} for the email folder.
+The source for an email can be a file upload or an IMAP mailbox folder. In the following example, an IMAP mailbox folder is opened and "today's" emails are looped through. The emails will be represented as character strings. You will need to provide the correct {MAILBOX}, {USER} and {PASSWORD} for the email folder.
 ```
 $scanner = new SourcePot\Email\Scanner();
 
