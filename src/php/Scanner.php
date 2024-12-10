@@ -87,9 +87,13 @@ final class Scanner{
         $envelope='--'.md5($message->properties()->body);
         $boundaries=array($envelope=>TRUE);
         $header=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/plain','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
-        $this->parts=$this->addPart($this->parts,$header,$message->properties()->body);
+        if (isset($message->properties()->body)){
+            $this->parts=$this->addPart($this->parts,$header,$message->properties()->body);
+        }
         $header=array('boundaries'=>$boundaries,'content-type'=>array(0=>'text/html','charset'=>'UTF-8'),'content-transfer-encoding'=>'7bit');
-        $this->parts=$this->addPart($this->parts,$header,$message->properties()->body_html);
+        if (isset($message->properties()->body_html)){
+            $this->parts=$this->addPart($this->parts,$header,$message->properties()->body_html);
+        }
         // add attachments
         foreach($message->getAttachments() as $attachment){
             $fileName=$attachment->getFilename();
