@@ -204,7 +204,7 @@ final class Scanner{
                 $header[$fieldName.' mailboxes']=$mailboxes;
             }
             // seperate into fieldBody comps
-            $fieldBodyComps=preg_split('/;\s/',$fieldBody);
+            $fieldBodyComps=preg_split('/;\s*/',$fieldBody);
             foreach($fieldBodyComps as $fieldBodyCompIndex=>$fieldBodyComp){
                 $fieldBodyComp=trim($fieldBodyComp);
                 // decode values
