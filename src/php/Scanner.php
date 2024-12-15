@@ -212,7 +212,16 @@ final class Scanner{
                 if ($eqSign===FALSE || !$separateKeyValuePairs){
                     // no equal sign detected
                     if (count($fieldBodyComps)>1){
-                        $header[$fieldName][$fieldBodyCompIndex]=$fieldBodyComp;
+                        if (!isset($header[$fieldName])){
+                            // field not yet set
+                            $header[$fieldName][$fieldBodyCompIndex]=$fieldBodyComp;
+                        } else if(is_array($header[$fieldName])){
+                            // field set and it is of type array
+                            $header[$fieldName][$fieldBodyCompIndex]=$fieldBodyComp;
+                        } else {
+                            // existing field is not of type array -> needs to be conevrted to array
+                            $header[$fieldName]=array('org'=>$header[$fieldName],$fieldBodyCompIndex=>$fieldBodyComp);
+                        }
                     } else {
                         $header[$fieldName]=$fieldBodyComp;
                     }
