@@ -35,7 +35,7 @@ final class Scanner{
 
     public function load(string $msg)
     {
-        $this->transferHeader=$this->parts=array();
+        $this->transferHeader=$this->parts=$this->prefixArr=$this->suffixArr=$this->boundaries=array();
         $this->rawMsg=$msg;
         if (stripos($msg,'Delivery-date:')===FALSE && stripos($msg,'Received:')===FALSE){
             // process ole message, e.g. *.msg (Outlook)
@@ -292,12 +292,13 @@ final class Scanner{
                     $mailboxValue=(empty($mailboxComps))?'':(array_shift($mailboxComps));
                     $mailboxValue=trim($mailboxValue,'"\'');
                     $mailboxes[$index]=array('email'=>$mailboxAddr,'name'=>$mailboxValue);
-                    preg_match('/.+\s<[^>]+>/',$mailbox,$match);
                 } else {
                     // a@b.com
                     preg_match('/[^\s@=:;]+@[^\s@\.]+\.[a-zA-Z]+/',$mailbox,$match);
-                    $mailboxAddr=trim($match[0],'<>');
-                    $mailboxes[$index]=array('email'=>$mailboxAddr,'name'=>'');
+                    if (isset($match[0])){
+                        $mailboxAddr=trim($match[0],'<>');
+                        $mailboxes[$index]=array('email'=>$mailboxAddr,'name'=>'');
+                    }
                 }
             }
         }
@@ -322,6 +323,9 @@ final class Scanner{
             $key.='['.$header['content-type'][0].']';
         }
         if (isset($this->transferHeader['subject'])){
+            if (is_array($this->transferHeader['subject'])){
+                $this->transferHeader['subject']=implode('; ',$this->transferHeader['subject']);
+            }
             $suffix=(mb_strlen($this->transferHeader['subject'])>40)?'... ':' ';
             $key=mb_substr($this->transferHeader['subject'],0,40).$suffix.$key;
         }
