@@ -37,7 +37,7 @@ final class Scanner{
     {
         $this->transferHeader=$this->parts=$this->prefixArr=$this->suffixArr=$this->boundaries=array();
         $this->rawMsg=$msg;
-        if (stripos($msg,'Delivery-date:')===FALSE && stripos($msg,'Received:')===FALSE){
+        if (stripos($msg,'ubject: ')===FALSE && stripos($msg,'rom: ')===FALSE){
             // process ole message, e.g. *.msg (Outlook)
             $msg=$this->processOleMsg($msg);
         } else {
