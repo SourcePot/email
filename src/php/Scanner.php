@@ -39,7 +39,7 @@ final class Scanner{
         $this->rawMsg=$msg;
         if (stripos($msg,'ubject: ')===FALSE && stripos($msg,'rom: ')===FALSE){
             // process ole message, e.g. *.msg (Outlook)
-            $msg=$this->processOleMsg($msg);
+            $msg=$this->processOleMsgStr($msg);
         } else {
             // process standard message, e.g. *.eml (Thunderbird)
             $this->processStdMeg($msg);
@@ -72,7 +72,7 @@ final class Scanner{
         $this->msgHash=sha1($hashStr);
     }
 
-    private function processOleMsg(string $msg)
+    private function processOleMsgStr(string $msg)
     {
         // create message object
         $messageFactory = new \Hfig\MAPI\MapiMessageFactory();
@@ -80,6 +80,11 @@ final class Scanner{
         $stream=fopen('data://text/plain;base64,'.base64_encode($msg),'r');
         $ole=$documentFactory->createFromStream($stream);
         $message=$messageFactory->parseMessage($ole);
+        $this->processOleMsg($message);
+    }
+
+    private function processOleMsg(object $message)
+    {
         // get header
         $header=$this->processHeader($message->properties()->transport_message_headers);
         $this->setHeader($header);
@@ -101,7 +106,12 @@ final class Scanner{
             $attachmentEnvelope='--'.md5($idHash);
             $boundaries[$attachmentEnvelope]=TRUE;
             $header=array('boundaries'=>$boundaries,'content-type'=>array('0'=>$attachment->getMimeType(),'name'=>$fileName),'content-disposition'=>array(0=>'attachment','filename'=>$fileName));
-            $this->parts=$this->addPart($this->parts,$header,$attachment->getData());
+            $attachmentData=$attachment->getData();
+            if (is_object($attachmentData)){
+                $this->processOleMsg($attachmentData);
+            } else {
+                $this->parts=$this->addPart($this->parts,$header,$attachmentData);
+            }
             $boundaries[$attachmentEnvelope]=FALSE;
         }
         $boundaries[$envelope]=FALSE;
@@ -128,7 +138,7 @@ final class Scanner{
                     $msgSuffix=array_pop($msgChunks);
                     // get any content before the first start boundary
                     $msgSections['body']=array_shift($msgChunks);
-                    $msgParts=explode($startBoundary,$msgSections['body']);
+                    $msgParts=explode($startBoundary,($msgSections['body']??''));
                     $msgPrefix=array_shift($msgParts);
                     if (!empty($msgPrefix)){$this->prefixArr[]=$msgPrefix;}
                     if (!empty($msgSuffix)){$this->suffixArr[]=$msgSuffix;}
