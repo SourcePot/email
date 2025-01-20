@@ -29,23 +29,30 @@ final class Scanner{
     function __construct(string $msg='')
     {
         if ($msg){
-            $this->load($msg);
+            $this->load($msg,TRUE);
         }
     }
 
-    public function load(string $msg)
+    public function load(string $msg,$isNewMsg=TRUE)
     {
-        $this->transferHeader=$this->parts=$this->prefixArr=$this->suffixArr=$this->boundaries=array();
-        $this->rawMsg=$msg;
-        if (stripos($msg,'ubject: ')===FALSE && stripos($msg,'rom: ')===FALSE){
+        if ($isNewMsg){
+            $this->transferHeader=$this->parts=$this->prefixArr=$this->suffixArr=$this->boundaries=array();
+            $this->rawMsg=$msg;
+        }
+        if ($this->isOleMsg($msg)){
             // process ole message, e.g. *.msg (Outlook)
-            $msg=$this->processOleMsgStr($msg);
+            $this->processOleMsgStr($msg);
         } else {
             // process standard message, e.g. *.eml (Thunderbird)
             $this->processStdMeg($msg);
         }
     }
     
+    private function isOleMsg(string $msg):bool
+    {
+        return !mb_check_encoding($msg,'UTF-8');
+    }
+
     public function getRawMsg():string
     {
         return $this->rawMsg;
@@ -110,7 +117,14 @@ final class Scanner{
             if (is_object($attachmentData)){
                 $this->processOleMsg($attachmentData);
             } else {
-                $this->parts=$this->addPart($this->parts,$header,$attachmentData);
+                $headerStr=json_encode($header);
+                if (strpos($headerStr,'.p7m')>0){
+                    $header=$this->transferHeader;
+                    $this->load($attachmentData,FALSE);
+                    $this->transferHeader=$header;
+                } else {
+                    $this->parts=$this->addPart($this->parts,$header,$attachmentData);
+                }             
             }
             $boundaries[$attachmentEnvelope]=FALSE;
         }
