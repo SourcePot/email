@@ -24,8 +24,8 @@ foreach($files as $file){
     if (is_file(TMP_DIR.$file)){unlink(TMP_DIR.$file);}
 }
 // form pürocessing
-$headerArr=array();
-$bodyArr=array();
+$headerArr=[];
+$bodyArr=[];
 if (isset($_POST['process'])){
     if (is_file($_FILES['msg']['tmp_name'])){
         move_uploaded_file($_FILES['msg']['tmp_name'],TMP_DIR.'test.msg');

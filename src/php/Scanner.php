@@ -18,13 +18,13 @@ final class Scanner{
     public const DB_TIMEZONE='UTC';
 
     private $rawMsg='';
-    private $prefixArr=array();
-    private $suffixArr=array();
-    private $parts=array();
+    private $prefixArr=[];
+    private $suffixArr=[];
+    private $parts=[];
     private $msgHash='';
 
-    private $transferHeader=array();
-    private $boundaries=array();
+    private $transferHeader=[];
+    private $boundaries=[];
     
     function __construct(string $msg='')
     {
@@ -36,7 +36,7 @@ final class Scanner{
     public function load(string $msg,$isNewMsg=TRUE)
     {
         if ($isNewMsg){
-            $this->transferHeader=$this->parts=$this->prefixArr=$this->suffixArr=$this->boundaries=array();
+            $this->transferHeader=$this->parts=$this->prefixArr=$this->suffixArr=$this->boundaries=[];
             $this->rawMsg=$msg;
         }
         if ($this->isOleMsg($msg)){
@@ -131,7 +131,7 @@ final class Scanner{
         $boundaries[$envelope]=FALSE;
     }
 
-    private function processStdMeg(string $msg,array $header=array())
+    private function processStdMeg(string $msg,array $header=[])
     {
         if (empty($header)){
             // initial method call - transfer header will be set
@@ -173,7 +173,7 @@ final class Scanner{
 
     private function separateHeaderBody(string $msg,bool $strict=FALSE,bool $separateKeyValuePairs=FALSE):array
     {
-        $arr=array('header'=>array(),'body'=>'');
+        $arr=array('header'=>[],'body'=>'');
         $separator="\r\n\r\n";
         $separatorPos=mb_strpos($msg,$separator)+mb_strlen($separator);
         if ($separatorPos===FALSE && $strict){
@@ -181,14 +181,14 @@ final class Scanner{
         } else {
             // seperate header
             $msgHeader=mb_substr($msg,0,$separatorPos);
-            $arr['header']=$this->processHeader($msgHeader,array(),$separateKeyValuePairs);
+            $arr['header']=$this->processHeader($msgHeader,[],$separateKeyValuePairs);
             // separate body
             $arr['body']=mb_substr($msg,$separatorPos);
         }
         return $arr;
     }
 
-    private function processHeader(string $msgHeader,array $header=array(),bool $separateKeyValuePairs=FALSE):array
+    private function processHeader(string $msgHeader,array $header=[],bool $separateKeyValuePairs=FALSE):array
     {
         $header['MIME-type']=$header['MIME-type']??'';
         $header['isMultipart']=FALSE;
@@ -261,7 +261,7 @@ final class Scanner{
     }
 
     private function getContentHeader(array $header):array{
-        $contentHeader=array();
+        $contentHeader=[];
         foreach($header as $key=>$value){
             if (mb_strpos($key,'content-')===0 || ($key==='boundary' && !empty($value)) || $key==='MIME-type'){
                 $contentHeader[$key]=$value;
@@ -310,7 +310,7 @@ final class Scanner{
     }
 
     private function getMailboxes(string $str):array{
-        $mailboxes=array();
+        $mailboxes=[];
         if (mb_strpos($str,'@')>0 && mb_strpos($str,'.')>0){
             $mailboxes=preg_split('/,\s("|<)/',$str);
             if (count($mailboxes)===1){
