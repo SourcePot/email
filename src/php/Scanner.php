@@ -93,7 +93,8 @@ final class Scanner{
     private function processOleMsg(object $message)
     {
         // get header
-        $header=$this->processHeader($message->properties()->transport_message_headers);
+        $transportHeaderStr=$message->properties()->transport_message_headers??'';
+        $header=$this->processHeader($transportHeaderStr);
         $this->setHeader($header);
         // create body
         $envelope='--'.md5($message->properties()->body);
